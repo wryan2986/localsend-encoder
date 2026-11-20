@@ -51,8 +51,8 @@ jobs:
       - name: Build universal app and archive
         run: |
           ENCODER_MAC_ARCH=universal ./scripts/build-macos.sh
-          ditto -c -k --sequesterRsrc --keepParent 'dist/LocalSend Encoder.app' dist/LocalSend-Encoder-macOS.zip
+          ditto -c -k --sequesterRsrc --keepParent 'dist/SpliceDesk.app' dist/SpliceDesk-macOS.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: LocalSend-Encoder-macOS
-          path: dist/LocalSend-Encoder-macOS.zip
+          name: SpliceDesk-macOS
+          path: dist/SpliceDesk-macOS.zip

@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "portable"))
 from encoder import Cancelled, EncodeError, Job, PRESETS, encode, executable, latest_video, metadata
+from edits import export_edit
 
 
 class EncoderTests(unittest.TestCase):
@@ -85,6 +86,33 @@ class EncoderTests(unittest.TestCase):
                 encode(bad_input, self.folder / "Invalid", PRESETS["Fastest"], False, Job(), lambda *_: None)
             trash.assert_not_called()
         self.assertTrue(bad_input.is_file())
+
+    def test_silent_export_copies_video_and_join_handles_missing_audio(self):
+        encoded, _ = encode(self.fixture, self.folder / "Edit Sources", PRESETS["Fastest"], True, Job(), lambda *_: None)
+        silent = self.folder / "Clip-silent.mp4"
+        export_edit([encoded], silent, Job(), lambda *_: None)
+        duration, muted, audio = metadata(silent, self.ffprobe, Job())
+        source_duration, source_video, _ = metadata(encoded, self.ffprobe, Job())
+        self.assertAlmostEqual(duration, source_duration, delta=0.1)
+        self.assertEqual((muted["codec_name"], muted["nb_frames"]), (source_video["codec_name"], source_video["nb_frames"]))
+        self.assertEqual(audio, 0)
+
+        joined = self.folder / "Clip-joined.mp4"
+        export_edit([silent, self.fixture], joined, Job(), lambda *_: None)
+        duration, video, audio = metadata(joined, self.ffprobe, Job())
+        self.assertAlmostEqual(duration, 4, delta=0.1)
+        self.assertEqual((video["width"], video["height"]), (muted["width"], muted["height"]))
+        self.assertEqual(audio, 1)
+        self.assertTrue(encoded.is_file() and self.fixture.is_file())
+
+    def test_edit_rejects_existing_output_and_duplicate_sources(self):
+        existing = self.folder / "Existing.mp4"
+        existing.write_bytes(b"existing output")
+        with self.assertRaises(EncodeError):
+            export_edit([self.fixture], existing, Job(), lambda *_: None)
+        with self.assertRaises(EncodeError):
+            export_edit([self.fixture, self.fixture], self.folder / "Duplicate.mp4", Job(), lambda *_: None)
+        self.assertEqual(existing.read_bytes(), b"existing output")
 
 
 if __name__ == "__main__":

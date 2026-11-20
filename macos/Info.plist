@@ -3,25 +3,25 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>LocalSend Encoder</string>
+	<string>SpliceDesk</string>
 	<key>CFBundleExecutable</key>
-	<string>LocalSend Encoder</string>
+	<string>SpliceDesk</string>
 	<key>CFBundleIconFile</key>
-	<string>LocalSendEncoder.icns</string>
+	<string>SpliceDesk.icns</string>
 	<key>CFBundleIdentifier</key>
 	<string>local.macsetup.localsend-encoder</string>
 	<key>CFBundleName</key>
-	<string>LocalSend Encoder</string>
+	<string>SpliceDesk</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.2.1</string>
+	<string>2.0.0</string>
 	<key>CFBundleVersion</key>
-	<string>4</string>
+	<string>5</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>NSDownloadsFolderUsageDescription</key>
-	<string>Find the latest video and save its smaller upload copy.</string>
+	<string>Select recent clips and export videos to Downloads.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 </dict>

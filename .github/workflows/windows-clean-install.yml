@@ -5,7 +5,7 @@ on:
       tag:
         description: Public release tag to install
         required: true
-        default: v1.2.1
+        default: v2.0.0
         type: string
 
 permissions:
@@ -122,7 +122,8 @@ jobs:
           & $ffmpeg -version | Select-Object -First 1
           & $ffprobe -version | Select-Object -First 1
           $root = Join-Path $env:LOCALAPPDATA 'Programs\LocalSend Encoder'
-          $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) 'LocalSend Encoder.lnk'
+          $shortcutName = if ($tag -like 'v1.*') { 'LocalSend Encoder.lnk' } else { 'SpliceDesk.lnk' }
+          $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) $shortcutName
           if (!(Test-Path $shortcut) -or !(Test-Path (Join-Path $root 'portable\app.py'))) { throw 'App or Start menu shortcut was missed.' }
           $launcher = (New-Object -ComObject WScript.Shell).CreateShortcut($shortcut)
           if (!(Test-Path $launcher.TargetPath)) { throw 'Start menu shortcut target is missing.' }

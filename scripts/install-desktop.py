@@ -51,7 +51,7 @@ def install():
             "$ErrorActionPreference = 'Stop'; "
             "$shell = New-Object -ComObject WScript.Shell; "
             "$programs = [Environment]::GetFolderPath('Programs'); "
-            "$link = $shell.CreateShortcut((Join-Path $programs 'LocalSend Encoder.lnk')); "
+            "$link = $shell.CreateShortcut((Join-Path $programs 'SpliceDesk.lnk')); "
             "$link.TargetPath = $env:ENCODER_PYTHON; "
             "$link.Arguments = [string][char]34 + $env:ENCODER_APP + [char]34; "
             "$link.WorkingDirectory = $env:ENCODER_ROOT; "
@@ -70,12 +70,12 @@ def install():
         applications.mkdir(parents=True, exist_ok=True)
         icon = desktop_escape(str(target / "assets" / "AppIcon.png"))
         (applications / "localsend-encoder.desktop").write_text(
-            "[Desktop Entry]\nType=Application\nName=LocalSend Encoder\n"
-            "Comment=Make a smaller MP4 from your latest video\n"
+            "[Desktop Entry]\nType=Application\nName=SpliceDesk\n"
+            "Comment=Compress, join, and mute videos\n"
             f"Exec={desktop_exec(launcher)}\nIcon={icon}\nTerminal=false\nCategories=AudioVideo;Video;\n",
             encoding="utf-8",
         )
-    print("Installed. Open LocalSend Encoder from your app menu.")
+    print("Installed. Open SpliceDesk from your app menu.")
 
 
 if __name__ == "__main__":

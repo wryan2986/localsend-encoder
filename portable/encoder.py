@@ -131,12 +131,16 @@ def identity(path):
     return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
 
 
-def latest_video(folder):
+def latest_video(folder, encoded=False):
     candidates = []
     if not folder.is_dir():
         return None
     for path in folder.iterdir():
         if path.name.startswith(".") or path.suffix.lower() not in VIDEO_SUFFIXES:
+            continue
+        if path.stem.lower().endswith(("-joined", "-silent")) or (
+            not encoded and path.stem.lower().endswith("-upload")
+        ):
             continue
         try:
             candidates.append((identity(path)[3], path.name, path))
@@ -185,18 +189,51 @@ def progress_reader(update, stage, duration):
     return read
 
 
+def ffmpeg_command():
+    return [executable("ffmpeg"), "-hide_banner", "-nostdin", "-v", "error", "-xerror",
+            "-nostats", "-progress", "pipe:1"]
+
+
+def verify_export(copy, duration, audio_count, base, ffprobe, job, update):
+    verified = identity(copy)
+    update("Verifying", 0)
+    result_duration, video, result_audio = metadata(copy, ffprobe, job)
+    if abs(result_duration - duration) > 1 or result_audio != audio_count:
+        raise EncodeError("The export has a duration or track mismatch.")
+    job.run(base + [
+        "-err_detect", "explode", "-protocol_whitelist", "file,pipe", "-i", str(copy),
+        "-map", "0:v", "-map", "0:a?", "-fps_mode:v", "passthrough",
+        "-enc_time_base:v", "1:1000000", "-f", "null", "-",
+    ], progress_reader(update, "Verifying", duration))
+    if identity(copy) != verified:
+        raise EncodeError("The export changed during verification.")
+    return video
+
+
+def publish(copy, output, job, update):
+    job.commit()
+    update("Saving verified copy", 99)
+    # Publish atomically without overwriting a file created by another instance.
+    try:
+        os.link(copy, output)
+    except FileExistsError as error:
+        raise EncodeError("A file already exists at this destination.") from error
+    except OSError as error:
+        raise EncodeError("The destination must support hard links. Choose a local folder.") from error
+
+
 def encode(source, folder, preset, keep, job, update):
     source = source.absolute()
     original = identity(source)
     if source.suffix.lower() not in VIDEO_SUFFIXES:
         raise EncodeError("Choose an MP4, MOV, or M4V file.")
-    ffmpeg, ffprobe = executable("ffmpeg"), executable("ffprobe")
+    ffprobe = executable("ffprobe")
     duration, video, audio_count = metadata(source, ffprobe, job)
     if video.get("color_transfer") in {"smpte2084", "arib-std-b67"}:
         raise EncodeError("HDR isn’t supported by these presets. The original was kept.")
     output = folder / (source.stem + preset.suffix)
     if output.exists() or output.is_symlink():
-        raise EncodeError("This preset’s output already exists. Open Encoded Folder to find it.")
+        raise EncodeError("An export for this preset already exists in Downloads/Encoded.")
     folder.mkdir(parents=True, exist_ok=True)
     if preset.bounds:
         wide, tall = preset.bounds
@@ -207,7 +244,7 @@ def encode(source, folder, preset, keep, job, update):
         )
     else:
         scale = "scale=trunc(iw/2)*2:trunc(ih/2)*2"
-    base = [ffmpeg, "-hide_banner", "-nostdin", "-v", "error", "-xerror", "-nostats", "-progress", "pipe:1"]
+    base = ffmpeg_command()
     with tempfile.TemporaryDirectory(prefix=".video-encode-", dir=folder) as staging:
         copy = Path(staging) / "upload.mp4"
         update("Encoding", 0)
@@ -222,28 +259,12 @@ def encode(source, folder, preset, keep, job, update):
         verified_size = verified[2]
         if verified_size >= original[2]:
             raise EncodeError("This preset didn’t make a smaller file. Try Fastest. The original was kept.")
-        update("Verifying", 0)
-        result_duration, _, result_audio = metadata(copy, ffprobe, job)
-        if abs(result_duration - duration) > 1 or result_audio != audio_count:
-            raise EncodeError("The copy has a duration or track mismatch. The original was kept.")
-        job.run(base + [
-            "-err_detect", "explode", "-protocol_whitelist", "file,pipe", "-i", str(copy),
-            "-map", "0:v", "-map", "0:a?", "-fps_mode:v", "passthrough",
-            "-enc_time_base:v", "1:1000000", "-f", "null", "-",
-        ], progress_reader(update, "Verifying", duration))
+        verify_export(copy, duration, audio_count, base, ffprobe, job, update)
         if identity(copy) != verified:
-            raise EncodeError("The copy changed during verification. The original was kept.")
+            raise EncodeError("The compressed copy changed before verification.")
         if identity(source) != original:
             raise EncodeError("The source changed while encoding. The original was kept.")
-        job.commit()
-        update("Saving verified copy", 99)
-        # Publish atomically without overwriting a file created by another instance.
-        try:
-            os.link(copy, output)
-        except FileExistsError as error:
-            raise EncodeError("The output already exists. The original was kept.") from error
-        except OSError as error:
-            raise EncodeError("The output folder must support hard links. The original was kept.") from error
+        publish(copy, output, job, update)
 
     reduction = round(100 * (1 - verified_size / original[2]))
     result = f"{reduction}% smaller. Original kept."

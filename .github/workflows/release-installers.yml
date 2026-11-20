@@ -5,7 +5,7 @@ on:
       tag:
         description: Public release tag to install
         required: true
-        default: v1.2.1
+        default: v2.0.0
         type: string
 
 permissions:
@@ -25,10 +25,16 @@ jobs:
           export ENCODER_APPLICATIONS_DIR="$RUNNER_TEMP/Applications"
           mkdir -p "$ENCODER_APPLICATIONS_DIR"
           repo="$GITHUB_REPOSITORY"; tag="$INSTALL_TAG"; curl -fsSL "https://raw.githubusercontent.com/$repo/$tag/scripts/bootstrap-unix.sh" | bash -s -- "https://github.com/$repo/archive/refs/tags/$tag.tar.gz"
-          app="$ENCODER_APPLICATIONS_DIR/LocalSend Encoder.app"
+          name=SpliceDesk; icon=SpliceDesk.icns
+          if [[ "$tag" == v1.* ]]; then name="LocalSend Encoder"; icon=LocalSendEncoder.icns; fi
+          app="$ENCODER_APPLICATIONS_DIR/$name.app"
           codesign --verify --strict "$app"
-          test -x "$app/Contents/MacOS/LocalSend Encoder"
-          test -s "$app/Contents/Resources/LocalSendEncoder.icns"
+          test -x "$app/Contents/MacOS/$name"
+          test -s "$app/Contents/Resources/$icon"
+          if [[ "$tag" != v1.* ]]; then
+            export PATH="$(brew --prefix)/bin:$PATH"
+            command -v ffmpeg && command -v ffprobe
+          fi
 
   linux:
     runs-on: ubuntu-latest
@@ -58,7 +64,8 @@ jobs:
           if ($env:INSTALL_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$') { throw 'Invalid tag' }
           $repo=$env:GITHUB_REPOSITORY; $tag=$env:INSTALL_TAG; & ([scriptblock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/$repo/$tag/scripts/bootstrap-windows.ps1"))) "https://github.com/$repo/archive/refs/tags/$tag.zip"
           $root = Join-Path $env:LOCALAPPDATA 'Programs\LocalSend Encoder'
-          $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) 'LocalSend Encoder.lnk'
+          $shortcutName = if ($tag -like 'v1.*') { 'LocalSend Encoder.lnk' } else { 'SpliceDesk.lnk' }
+          $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) $shortcutName
           if (!(Test-Path $shortcut) -or !(Test-Path (Join-Path $root 'portable\app.py'))) { throw 'App or Start menu shortcut was missed' }
           & (Join-Path $root 'venv\Scripts\python.exe') -c 'import tkinter, send2trash'
           if ($LASTEXITCODE -ne 0) { throw 'Application environment failed' }

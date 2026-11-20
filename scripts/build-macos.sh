@@ -15,15 +15,15 @@ mkdir -p "$destination"
 destination="$(cd "$destination" && pwd)"
 build="$(mktemp -d "$destination/.encoder-build.XXXXXXXX")"
 trap 'rm -rf -- "$build"' EXIT
-app="$build/LocalSend Encoder.app"
+app="$build/SpliceDesk.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$root/macos/Info.plist" "$app/Contents/"
-cp "$root/assets/AppIcon.icns" "$app/Contents/Resources/LocalSendEncoder.icns"
-binary="$app/Contents/MacOS/LocalSend Encoder"
+cp "$root/assets/AppIcon.icns" "$app/Contents/Resources/SpliceDesk.icns"
+binary="$app/Contents/MacOS/SpliceDesk"
 
 compile() {
   xcrun swiftc -O -swift-version 5 -target "$1-apple-macos14.0" \
-    -module-cache-path "$build/module-cache" "$root/macos/main.swift" -o "$2"
+    -module-cache-path "$build/module-cache" "$root/macos/VideoEngine.swift" "$root/macos/main.swift" -o "$2"
 }
 if [[ "$arch" == universal ]]; then
   compile arm64 "$build/arm64"
@@ -34,7 +34,7 @@ else
 fi
 codesign --force --sign - "$app"
 codesign --verify --strict "$app"
-final="$destination/LocalSend Encoder.app"
+final="$destination/SpliceDesk.app"
 if [[ -e "$final" || -L "$final" ]]; then
   echo "Build destination already exists: $final" >&2
   exit 1
