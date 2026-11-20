@@ -68,6 +68,19 @@ jobs:
               throw "Could not query preinstalled $package (exit code $LASTEXITCODE)."
             }
           }
+          # The runner also registers cached Python with py.exe outside the package inventory.
+          $cache = Join-Path $env:RUNNER_TOOL_CACHE 'Python'
+          foreach ($pythonCore in @(
+            'HKLM:\SOFTWARE\Python\PythonCore', 'HKCU:\SOFTWARE\Python\PythonCore',
+            'HKLM:\SOFTWARE\WOW6432Node\Python\PythonCore', 'HKCU:\SOFTWARE\WOW6432Node\Python\PythonCore'
+          )) {
+            $registration = Join-Path $pythonCore '3.12'
+            $key = Get-Item -LiteralPath (Join-Path $registration 'InstallPath') -ErrorAction SilentlyContinue
+            if ($key -and ([string]$key.GetValue('')).StartsWith($cache + '\', [StringComparison]::OrdinalIgnoreCase)) {
+              Write-Host "Removing disposable runner cache registration: $registration"
+              Remove-Item -LiteralPath $registration -Recurse -Force
+            }
+          }
           $global:LASTEXITCODE = 0
 
       - name: Install from the public tag with Python and FFmpeg unavailable
