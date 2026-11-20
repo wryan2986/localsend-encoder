@@ -1,0 +1,86 @@
+name: Windows clean dependency install
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Public release tag to install
+        required: true
+        default: v1.2.0
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  winget:
+    runs-on: windows-2025
+    timeout-minutes: 15
+    env:
+      INSTALL_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Find the real Windows Package Manager
+        shell: pwsh
+        run: |
+          $winget = Get-Command winget.exe -ErrorAction SilentlyContinue
+          if (!$winget) {
+            $appInstaller = Get-AppxPackage -Name Microsoft.DesktopAppInstaller
+            if ($appInstaller) {
+              Add-AppxPackage -Register (Join-Path $appInstaller.InstallLocation 'AppxManifest.xml') -DisableDevelopmentMode
+            }
+          }
+          if (!(Get-Command winget.exe -ErrorAction SilentlyContinue)) {
+            Install-Module -Name Microsoft.WinGet.Client -Scope CurrentUser -Force -Repository PSGallery
+            Import-Module Microsoft.WinGet.Client
+            Repair-WinGetPackageManager -Latest
+          }
+          $winget = Get-Command winget.exe -ErrorAction Stop
+          Write-Host "WinGet executable: $($winget.Source)"
+          & $winget.Source --version
+          if ($LASTEXITCODE -ne 0) { throw 'WinGet is unavailable.' }
+          Split-Path $winget.Source | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+
+      - name: Install from the public tag with Python and FFmpeg unavailable
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RUNNER_ENVIRONMENT -ne 'github-hosted') { throw 'A disposable GitHub-hosted runner is required.' }
+          if ($env:INSTALL_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$') { throw 'Invalid tag.' }
+          $system = Get-CimInstance Win32_OperatingSystem
+          Write-Host "$($system.Caption) $($system.Version)"
+          $winget = (Get-Command winget.exe -ErrorAction Stop).Source
+          $windows = $env:SystemRoot
+          $env:PATH = "$(Split-Path $winget);$windows\System32;$windows;$windows\System32\WindowsPowerShell\v1.0"
+          where.exe winget
+          $pythonLocation = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python312\python.exe'
+          $links = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Links'
+          $ffmpeg = Join-Path $links 'ffmpeg.exe'
+          $ffprobe = Join-Path $links 'ffprobe.exe'
+          foreach ($exe in @($pythonLocation, $ffmpeg, $ffprobe)) {
+            if (Test-Path $exe) { throw "Dependency already installed: $exe" }
+          }
+          foreach ($name in @('python.exe', 'ffmpeg.exe', 'ffprobe.exe')) {
+            if (Get-Command $name -ErrorAction SilentlyContinue) { throw "Dependency already on PATH: $name" }
+          }
+          $py = Get-Command py.exe -ErrorAction SilentlyContinue
+          if ($py) {
+            & $py.Source -3.12 -c 'import tkinter, venv' 2>$null
+            if ($LASTEXITCODE -eq 0) { throw 'Python 3.12 already available through the launcher.' }
+          }
+          $repo=$env:GITHUB_REPOSITORY; $tag=$env:INSTALL_TAG; & ([scriptblock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/$repo/$tag/scripts/bootstrap-windows.ps1"))) "https://github.com/$repo/archive/refs/tags/$tag.zip"
+          foreach ($exe in @($pythonLocation, $ffmpeg, $ffprobe)) {
+            if (!(Test-Path $exe)) { throw "WinGet dependency not installed: $exe" }
+          }
+          & $pythonLocation --version
+          & $ffmpeg -version | Select-Object -First 1
+          & $ffprobe -version | Select-Object -First 1
+          $root = Join-Path $env:LOCALAPPDATA 'Programs\LocalSend Encoder'
+          $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) 'LocalSend Encoder.lnk'
+          if (!(Test-Path $shortcut) -or !(Test-Path (Join-Path $root 'portable\app.py'))) { throw 'App or Start menu shortcut was missed.' }
+          $launcher = (New-Object -ComObject WScript.Shell).CreateShortcut($shortcut)
+          if (!(Test-Path $launcher.TargetPath)) { throw 'Start menu shortcut target is missing.' }
+          & (Join-Path $root 'venv\Scripts\python.exe') -c 'import tkinter, send2trash'
+          if ($LASTEXITCODE -ne 0) { throw 'Application environment failed.' }
+          & $winget list --id Python.Python.3.12 --exact --source winget
+          if ($LASTEXITCODE -ne 0) { throw 'WinGet did not register Python.' }
+          & $winget list --id Gyan.FFmpeg --exact --source winget
+          if ($LASTEXITCODE -ne 0) { throw 'WinGet did not register FFmpeg.' }
