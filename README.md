@@ -12,7 +12,7 @@ Use the installer for your operating system from an extracted source archive or 
 
 ### macOS
 
-On macOS 14 or later, unzip `LocalSend-Encoder-macOS.zip` and drag **LocalSend Encoder.app** into **Applications**. The archive contains Apple Silicon and Intel slices. It is ad hoc signed. A public binary release intended to open directly on other Macs should be Developer ID signed and notarized. The source installer builds and signs the app locally and requires Apple’s Xcode Command Line Tools. Use `xcode-select --install` if they are missing.
+On macOS 14 or later, unzip [LocalSend-Encoder-macOS.zip](https://github.com/wryan2986/localsend-encoder/releases/download/v1.2.0/LocalSend-Encoder-macOS.zip) and drag **LocalSend Encoder.app** into **Applications**. The archive contains Apple Silicon and Intel slices. It is ad hoc signed. A public binary release intended to open directly on other Macs should be Developer ID signed and notarized. The source installer builds and signs the app locally and requires Apple’s Xcode Command Line Tools. Use `xcode-select --install` if they are missing.
 
 One line from Terminal:
 
@@ -36,7 +36,7 @@ If you install the dependencies yourself, use Python 3.12 with Tcl/Tk and get an
 
 ### Linux
 
-From an extracted archive, run `./scripts/install-linux.sh`. It installs into your user’s application menu. On Debian and Ubuntu, it offers to install missing system packages through APT and may ask for your sudo password. On other distributions, first install Python 3.9 or later with Tk and venv, plus FFmpeg 5.1 or later with ffprobe and libx264. Use a graphical desktop session.
+From an extracted archive, run `./scripts/install-linux.sh`. It installs into your user’s application menu. On Debian and Ubuntu, it installs missing system packages through APT and may ask for your sudo password. On other distributions, first install Python 3.9 or later with Tk and venv, plus FFmpeg 5.1 or later with ffprobe and libx264. Use a graphical desktop session.
 
 One line from a terminal:
 
@@ -68,7 +68,7 @@ Resolution bounds rotate for portrait input. Presets aim to reduce size and do n
 - **Windows/Linux:** With FFmpeg and Python with Tk installed, run `python -m pip install -r requirements.txt` in a virtual environment, then `python portable/app.py`.
 - **Tests:** Run `python -m unittest discover -s tests -v` in the same environment. The tests generate synthetic footage and check the encoding pipeline, file preservation, and cancellation. GitHub Actions is configured to run the portable tests on Windows and Ubuntu and build the native app on macOS.
 
-The Mac release and shared portable encoding pipeline were tested on Apple Silicon. Run the included GitHub Actions checks and try the Start menu and Applications menu installers on their native platforms before announcing the public release.
+The [Desktop checks](https://github.com/wryan2986/localsend-encoder/actions/workflows/ci.yml) cover the native Mac build and the Windows and Ubuntu encoding tests. The [release installer workflow](https://github.com/wryan2986/localsend-encoder/actions/workflows/release-installers.yml) exercises the public one-line commands. Its Windows Server runner provides Python and FFmpeg before installing the app, since Microsoft App Installer may be unavailable on Windows Server.
 
 ## Uninstall
 

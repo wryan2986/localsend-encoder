@@ -31,7 +31,8 @@ jobs:
           test -s "$app/Contents/Resources/LocalSendEncoder.icns"
 
   linux:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Install from the public tag
         shell: bash
