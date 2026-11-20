@@ -1,4 +1,5 @@
 """Check that the desktop window opens predictably without starting a job."""
+import os
 import sys
 import tempfile
 import tkinter as tk
@@ -20,4 +21,11 @@ with tempfile.TemporaryDirectory() as tmp:
     with patch("app.filedialog.askopenfilename", return_value=str(fixture)):
         app.choose()
     assert app.manual_selection and app.path == fixture
+    newest = Path(tmp) / "new-transfer.mp4"
+    newest.write_bytes(b"Used for refresh selection only")
+    stamp = fixture.stat().st_mtime + 2
+    os.utime(newest, (stamp, stamp))
+    app.refresh_button.invoke()
+    assert app.path == newest and not app.manual_selection and app.job is None
+    assert app.keep.get() and app.preset.get() == "Fastest"
     root.destroy()

@@ -18,6 +18,7 @@ class EncoderApp:
         self.downloads = downloads_folder()
         self.folder = self.downloads / "Encoded"
         self.path = None
+        self.manual_selection = False
         self.job = None
         self.events = queue.Queue()
         self.close_when_done = False
@@ -43,8 +44,12 @@ class EncoderApp:
         main.columnconfigure(0, weight=1)
         ttk.Label(main, text="Source video").grid(row=0, sticky="w")
         ttk.Label(main, textvariable=self.filename, wraplength=335).grid(row=1, sticky="w", pady=(3, 12))
-        self.choose_button = ttk.Button(main, text="Choose File…", command=self.choose)
-        self.choose_button.grid(row=1, column=1, sticky="e")
+        file_actions = ttk.Frame(main)
+        file_actions.grid(row=1, column=1, sticky="e")
+        self.refresh_button = ttk.Button(file_actions, text="Refresh", command=self.refresh)
+        self.refresh_button.pack(side="left", padx=(0, 6))
+        self.choose_button = ttk.Button(file_actions, text="Choose File…", command=self.choose)
+        self.choose_button.pack(side="left")
         options = ttk.Frame(main)
         options.grid(row=2, columnspan=2, sticky="w")
         ttk.Label(options, text="Encoding preset").pack(side="left", padx=(0, 8))
@@ -71,7 +76,6 @@ class EncoderApp:
         self.cancel_button.pack(side="right", padx=8)
         self.select_latest()
         root.bind("<FocusIn>", self.refresh_on_focus, add=True)
-        self.manual_selection = False
         root.after(80, self.poll)
 
     def select_latest(self):
@@ -80,6 +84,11 @@ class EncoderApp:
         except OSError:
             self.select(None)
             self.detail.set("Downloads couldn’t be read. Try Choose File.")
+
+    def refresh(self):
+        if self.job is None:
+            self.manual_selection = False
+            self.select_latest()
 
     def refresh_on_focus(self, event):
         if event.widget == self.root and self.job is None and not self.manual_selection:
@@ -117,6 +126,7 @@ class EncoderApp:
     def controls(self):
         idle = self.job is None
         self.choose_button.configure(state="normal" if idle else "disabled")
+        self.refresh_button.configure(state="normal" if idle else "disabled")
         self.keep_button.configure(state="normal" if idle else "disabled")
         self.preset_picker.configure(state="readonly" if idle else "disabled")
         self.encode_button.configure(state="normal" if idle and self.path else "disabled")

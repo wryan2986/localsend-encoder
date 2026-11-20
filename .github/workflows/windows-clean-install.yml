@@ -5,7 +5,7 @@ on:
       tag:
         description: Public release tag to install
         required: true
-        default: v1.2.0
+        default: v1.2.1
         type: string
 
 permissions:
@@ -59,12 +59,16 @@ jobs:
             if (Test-Path $exe) { throw "Dependency already installed: $exe" }
           }
           foreach ($name in @('python.exe', 'ffmpeg.exe', 'ffprobe.exe')) {
-            if (Get-Command $name -ErrorAction SilentlyContinue) { throw "Dependency already on PATH: $name" }
+            $command = Get-Command $name -ErrorAction SilentlyContinue
+            $storePythonAlias = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\python.exe'
+            if ($command -and !($name -eq 'python.exe' -and $command.Source -eq $storePythonAlias)) {
+              throw "Dependency already on PATH: $($command.Source)"
+            }
           }
           $py = Get-Command py.exe -ErrorAction SilentlyContinue
           if ($py) {
-            & $py.Source -3.12 -c 'import tkinter, venv' 2>$null
-            if ($LASTEXITCODE -eq 0) { throw 'Python 3.12 already available through the launcher.' }
+            $pyProbe = Start-Process -FilePath $py.Source -ArgumentList '-3.12 -c "import tkinter, venv"' -Wait -PassThru -NoNewWindow
+            if ($pyProbe.ExitCode -eq 0) { throw 'Python 3.12 already available through the launcher.' }
           }
           $repo=$env:GITHUB_REPOSITORY; $tag=$env:INSTALL_TAG; & ([scriptblock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/$repo/$tag/scripts/bootstrap-windows.ps1"))) "https://github.com/$repo/archive/refs/tags/$tag.zip"
           foreach ($exe in @($pythonLocation, $ffmpeg, $ffprobe)) {

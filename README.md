@@ -8,16 +8,16 @@ LocalSend Encoder is an independent project. It selects videos by modification t
 
 ## Install
 
-Use the installer for your operating system from an extracted source archive or Git checkout. The terminal one-liners use the `v1.2.0` release tag so you can review the installer for that version before running it.
+Use the installer for your operating system from an extracted source archive or Git checkout. The terminal one-liners use the `v1.2.1` release tag so you can review the installer for that version before running it.
 
 ### macOS
 
-On macOS 14 or later, unzip [LocalSend-Encoder-macOS.zip](https://github.com/wryan2986/localsend-encoder/releases/download/v1.2.0/LocalSend-Encoder-macOS.zip) and drag **LocalSend Encoder.app** into **Applications**. The archive contains Apple Silicon and Intel slices. It is ad hoc signed. A public binary release intended to open directly on other Macs should be Developer ID signed and notarized. The source installer builds and signs the app locally and requires Apple’s Xcode Command Line Tools. Use `xcode-select --install` if they are missing.
+On macOS 14 or later, unzip [LocalSend-Encoder-macOS.zip](https://github.com/wryan2986/localsend-encoder/releases/download/v1.2.1/LocalSend-Encoder-macOS.zip) and drag **LocalSend Encoder.app** into **Applications**. The archive contains Apple Silicon and Intel slices. It is ad hoc signed. A public binary release intended to open directly on other Macs should be Developer ID signed and notarized. The source installer builds and signs the app locally and requires Apple’s Xcode Command Line Tools. Use `xcode-select --install` if they are missing.
 
 One line from Terminal:
 
 ```bash
-repo=wryan2986/localsend-encoder; tag=v1.2.0; curl -fsSL "https://raw.githubusercontent.com/$repo/$tag/scripts/bootstrap-unix.sh" | bash -s -- "https://github.com/$repo/archive/refs/tags/$tag.tar.gz"
+repo=wryan2986/localsend-encoder; tag=v1.2.1; curl -fsSL "https://raw.githubusercontent.com/$repo/$tag/scripts/bootstrap-unix.sh" | bash -s -- "https://github.com/$repo/archive/refs/tags/$tag.tar.gz"
 ```
 
 From an extracted source archive, run `./scripts/install-macos.sh`. Drag the installed app to the Dock if you want one-click access. Quit an older version and move its app bundle to the Trash before reinstalling from source.
@@ -29,7 +29,7 @@ On Windows 10 or 11, double-click **scripts/install-windows.cmd** in the extract
 One line from PowerShell:
 
 ```powershell
-$repo='wryan2986/localsend-encoder'; $tag='v1.2.0'; & ([scriptblock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/$repo/$tag/scripts/bootstrap-windows.ps1"))) "https://github.com/$repo/archive/refs/tags/$tag.zip"
+$repo='wryan2986/localsend-encoder'; $tag='v1.2.1'; & ([scriptblock]::Create((Invoke-RestMethod "https://raw.githubusercontent.com/$repo/$tag/scripts/bootstrap-windows.ps1"))) "https://github.com/$repo/archive/refs/tags/$tag.zip"
 ```
 
 If you install the dependencies yourself, use Python 3.12 with Tcl/Tk and get an FFmpeg 5.1 or later build containing `ffmpeg.exe`, `ffprobe.exe`, and the `libx264` encoder. Put both executables on PATH. See [Python on Windows](https://docs.python.org/3/using/windows.html) and [FFmpeg downloads](https://ffmpeg.org/download.html).
@@ -41,14 +41,14 @@ From an extracted archive, run `./scripts/install-linux.sh`. It installs into yo
 One line from a terminal:
 
 ```bash
-repo=wryan2986/localsend-encoder; tag=v1.2.0; curl -fsSL "https://raw.githubusercontent.com/$repo/$tag/scripts/bootstrap-unix.sh" | bash -s -- "https://github.com/$repo/archive/refs/tags/$tag.tar.gz"
+repo=wryan2986/localsend-encoder; tag=v1.2.1; curl -fsSL "https://raw.githubusercontent.com/$repo/$tag/scripts/bootstrap-unix.sh" | bash -s -- "https://github.com/$repo/archive/refs/tags/$tag.tar.gz"
 ```
 
 Windows and Linux use a per-user Python environment for [Send2Trash](https://github.com/arsenetar/send2trash). The encoder itself makes no network requests.
 
 ## Use
 
-1. Wait for the transfer to finish. Open the app, or use **Choose File** for another video.
+1. Wait for the transfer to finish. Open the app or click **Refresh** to select the newest video in Downloads. Use **Choose File** for a different video.
 2. Pick **Fastest**, **Balanced**, or **Highest Quality**, then click **Encode**. Use **Cancel** during encoding or verification to stop and discard the partial copy.
 3. Click **Open Encoded Folder** to find the result under `Downloads/Encoded`.
 

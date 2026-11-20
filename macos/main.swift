@@ -111,6 +111,7 @@ final class EncoderWindow: NSObject, NSApplicationDelegate {
     private let detail = NSTextField(wrappingLabelWithString: "Click Encode to start.")
     private let progress = NSProgressIndicator()
     private var chooseButton: NSButton!
+    private var refreshButton: NSButton!
     private var keepOriginal: NSButton!
     private var encodeButton: NSButton!
     private var cancelButton: NSButton!
@@ -141,9 +142,12 @@ final class EncoderWindow: NSObject, NSApplicationDelegate {
         selection.maximumNumberOfLines = 2
         selection.lineBreakMode = .byTruncatingMiddle
         chooseButton = NSButton(title: "Choose File…", target: self, action: #selector(chooseFile))
-        let fileRow = row([selection, chooseButton])
+        refreshButton = NSButton(title: "Refresh", target: self, action: #selector(refreshSelection))
+        refreshButton.toolTip = "Select the newest video in Downloads."
+        let fileRow = row([selection, refreshButton, chooseButton])
         selection.setContentHuggingPriority(.defaultLow, for: .horizontal)
         chooseButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        refreshButton.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         presetPicker.addItems(withTitles: Preset.allCases.map(\.title))
         presetPicker.target = self
@@ -251,6 +255,12 @@ final class EncoderWindow: NSObject, NSApplicationDelegate {
         }
     }
 
+    @objc private func refreshSelection() {
+        guard job == nil else { return }
+        manuallySelected = false
+        refreshLatest()
+    }
+
     private func refreshLatest() {
         do {
             let files = try FileManager.default.contentsOfDirectory(
@@ -281,6 +291,7 @@ final class EncoderWindow: NSObject, NSApplicationDelegate {
     private func updateControls() {
         let idle = job == nil
         chooseButton.isEnabled = idle
+        refreshButton.isEnabled = idle
         presetPicker.isEnabled = idle
         keepOriginal.isEnabled = idle
         encodeButton.isEnabled = idle && selectedFile != nil
