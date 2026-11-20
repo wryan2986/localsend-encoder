@@ -39,6 +39,21 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'WinGet is unavailable.' }
           Split-Path $winget.Source | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
 
+      - name: Remove preinstalled dependencies from this disposable runner
+        shell: pwsh
+        run: |
+          if ($env:RUNNER_ENVIRONMENT -ne 'github-hosted') { throw 'A disposable GitHub-hosted runner is required.' }
+          $winget = (Get-Command winget.exe -ErrorAction Stop).Source
+          $launcher = Get-Command py.exe -ErrorAction SilentlyContinue
+          if ($launcher) { & $launcher.Source -0p }
+          foreach ($package in @('Python.Python.3.12', 'Gyan.FFmpeg')) {
+            & $winget list --exact --id $package --source winget --disable-interactivity
+            if ($LASTEXITCODE -eq 0) {
+              & $winget uninstall --exact --id $package --source winget --silent --disable-interactivity
+              if ($LASTEXITCODE -ne 0) { throw "Could not remove preinstalled $package." }
+            }
+          }
+
       - name: Install from the public tag with Python and FFmpeg unavailable
         shell: powershell
         run: |
