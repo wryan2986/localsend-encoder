@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>LocalSend Encoder</string>
+	<key>CFBundleExecutable</key>
+	<string>LocalSend Encoder</string>
+	<key>CFBundleIconFile</key>
+	<string>LocalSendEncoder.icns</string>
+	<key>CFBundleIdentifier</key>
+	<string>local.macsetup.localsend-encoder</string>
+	<key>CFBundleName</key>
+	<string>LocalSend Encoder</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.2</string>
+	<key>CFBundleVersion</key>
+	<string>3</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>Find the latest video and save its smaller upload copy.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+</dict>
+</plist>
