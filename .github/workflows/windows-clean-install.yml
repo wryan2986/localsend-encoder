@@ -39,9 +39,22 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'WinGet is unavailable.' }
           Split-Path $winget.Source | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
 
+      - name: Register the Microsoft community index for the noninteractive runner
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (!(Get-AppxPackage -Name Microsoft.Winget.Source)) {
+            $index = Join-Path $env:RUNNER_TEMP 'winget-source.msix'
+            Invoke-WebRequest -Uri 'https://cdn.winget.microsoft.com/cache/source2.msix' -OutFile $index -UseBasicParsing
+            Add-AppxPackage -Path $index
+          }
+          winget search --exact --id Python.Python.3.12 --source winget --disable-interactivity
+          if ($LASTEXITCODE -ne 0) { throw 'The Microsoft community index is unavailable.' }
+
       - name: Remove preinstalled dependencies from this disposable runner
         shell: pwsh
         run: |
+          $PSNativeCommandUseErrorActionPreference = $false
           if ($env:RUNNER_ENVIRONMENT -ne 'github-hosted') { throw 'A disposable GitHub-hosted runner is required.' }
           $winget = (Get-Command winget.exe -ErrorAction Stop).Source
           $launcher = Get-Command py.exe -ErrorAction SilentlyContinue
@@ -51,8 +64,11 @@ jobs:
             if ($LASTEXITCODE -eq 0) {
               & $winget uninstall --exact --id $package --source winget --silent --disable-interactivity
               if ($LASTEXITCODE -ne 0) { throw "Could not remove preinstalled $package." }
+            } elseif ($LASTEXITCODE -ne -1978335212) {
+              throw "Could not query preinstalled $package (exit code $LASTEXITCODE)."
             }
           }
+          $global:LASTEXITCODE = 0
 
       - name: Install from the public tag with Python and FFmpeg unavailable
         shell: powershell
