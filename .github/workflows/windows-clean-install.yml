@@ -130,5 +130,26 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Application environment failed.' }
           & $winget list --id Python.Python.3.12 --exact --source winget
           if ($LASTEXITCODE -ne 0) { throw 'WinGet did not register Python.' }
-          & $winget list --id Gyan.FFmpeg --exact --source winget
-          if ($LASTEXITCODE -ne 0) { throw 'WinGet did not register FFmpeg.' }
+          $packages = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Packages'
+          if (!(Get-ChildItem -LiteralPath $packages -Directory -Filter 'Gyan.FFmpeg_*')) {
+            throw 'The WinGet FFmpeg package directory is missing.'
+          }
+          $fixture = Join-Path $env:RUNNER_TEMP 'Sample Recording.mov'
+          & $ffmpeg -hide_banner -v error -f lavfi -i 'testsrc2=size=960x540:rate=24' -f lavfi -i 'sine=frequency=440' -t 2 -c:v prores_ks -c:a pcm_s16le $fixture
+          if ($LASTEXITCODE -ne 0) { throw 'Could not generate the sample video.' }
+          $env:ENCODER_TEST_APP = Join-Path $root 'portable'
+          $env:ENCODER_TEST_MOVIE = $fixture
+          @'
+          import os
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, os.environ["ENCODER_TEST_APP"])
+          from encoder import Job, PRESETS, encode
+
+          source = Path(os.environ["ENCODER_TEST_MOVIE"])
+          copy, summary = encode(source, source.parent / "Encoded", PRESETS["Fastest"], True, Job(), lambda *_: None)
+          assert source.is_file() and copy.stat().st_size < source.stat().st_size
+          print(f"Installed app encoded and verified the sample. {summary}")
+          '@ | & (Join-Path $root 'venv\Scripts\python.exe') -
+          if ($LASTEXITCODE -ne 0) { throw 'The installed app could not encode the sample.' }

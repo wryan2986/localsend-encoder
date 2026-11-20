@@ -68,7 +68,7 @@ Resolution bounds rotate for portrait input. Presets aim to reduce size and do n
 - **Windows/Linux:** With FFmpeg and Python with Tk installed, run `python -m pip install -r requirements.txt` in a virtual environment, then `python portable/app.py`.
 - **Tests:** Run `python -m unittest discover -s tests -v` in the same environment. The tests generate synthetic footage and check the encoding pipeline, file preservation, and cancellation. GitHub Actions is configured to run the portable tests on Windows and Ubuntu and build the native app on macOS.
 
-The [Desktop checks](https://github.com/wryan2986/localsend-encoder/actions/workflows/ci.yml) cover the native Mac build and the Windows and Ubuntu encoding tests. The [release installer workflow](https://github.com/wryan2986/localsend-encoder/actions/workflows/release-installers.yml) exercises the public one-line commands. Its Windows Server runner provides Python and FFmpeg before installing the app, since Microsoft App Installer may be unavailable on Windows Server.
+The [Desktop checks](https://github.com/wryan2986/localsend-encoder/actions/workflows/ci.yml) cover the native Mac build and the Windows and Ubuntu encoding tests. The [release installer workflow](https://github.com/wryan2986/localsend-encoder/actions/workflows/release-installers.yml) exercises the public one-line commands. The [clean Windows workflow](https://github.com/wryan2986/localsend-encoder/actions/workflows/windows-clean-install.yml) also starts with Python and FFmpeg unavailable, installs both through WinGet, checks the Start menu shortcut, and runs a sample encode.
 
 ## Uninstall
 
